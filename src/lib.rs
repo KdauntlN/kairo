@@ -25,19 +25,19 @@ impl<'a> Request<'a> {
         }
     }
 
-    pub fn parse(request: &'a str) -> Result<Request<'a>, RequestError> {
+    pub fn parse(request: &'a str) -> Result<Request<'a>, Error> {
         let mut request_obj = Request::new(&request);
         let mut lines = request.split("\n");
         let request_line = lines
             .next()
-            .ok_or(RequestError::EmptyRequest)?;
+            .ok_or(Error::EmptyRequest)?;
 
         let request_line = request_line.strip_suffix("\r").unwrap_or(request_line);
 
         let mut request_parts= request_line.split_whitespace();
-        request_obj.method = request_parts.next().ok_or(RequestError::InvalidStatusLine)?;
-        request_obj.uri = request_parts.next().ok_or(RequestError::InvalidStatusLine)?;
-        request_obj.protocol = request_parts.next().ok_or(RequestError::InvalidStatusLine)?;
+        request_obj.method = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+        request_obj.uri = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+        request_obj.protocol = request_parts.next().ok_or(Error::InvalidStatusLine)?;
 
         for line in &mut lines {
             if line == "\r" || line.is_empty() {
@@ -52,7 +52,7 @@ impl<'a> Request<'a> {
         }
 
         let length = match request_obj.headers.get("Content-Length") {
-            Some(v) => v.parse::<usize>().map_err(|_| RequestError::InvalidHeader)?,
+            Some(v) => v.parse::<usize>().map_err(|_| Error::InvalidHeader)?,
             None => 0,
         };
 
@@ -61,7 +61,7 @@ impl<'a> Request<'a> {
         let joined = lines.collect::<Vec<&str>>().join("\n");
         let mut reader = Cursor::new(joined.as_bytes());
 
-        let n = reader.read(&mut content).map_err(|_| RequestError::ContentReadError)?;
+        let n = reader.read(&mut content).map_err(|_| Error::ContentReadError)?;
         content.truncate(n);
 
         request_obj.content = content;
@@ -71,7 +71,7 @@ impl<'a> Request<'a> {
 }
 
 #[derive(Debug)]
-pub enum RequestError {
+pub enum Error {
     ParseError,
     EmptyRequest,
     InvalidHeader,
@@ -79,16 +79,16 @@ pub enum RequestError {
     ContentReadError
 }
 
-impl std::fmt::Display for RequestError {
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RequestError::ParseError => write!(f, "There was an error parsing the request"),
-            RequestError::EmptyRequest => write!(f, "The provided request was empty"),
-            RequestError::InvalidHeader => write!(f, "One or more headers was invalid"),
-            RequestError::InvalidStatusLine => write!(f, "The status line of the request was invalid"),
-            RequestError::ContentReadError => write!(f, "Could not read content from request")
+            Error::ParseError => write!(f, "There was an error parsing the request"),
+            Error::EmptyRequest => write!(f, "The provided request was empty"),
+            Error::InvalidHeader => write!(f, "One or more headers was invalid"),
+            Error::InvalidStatusLine => write!(f, "The status line of the request was invalid"),
+            Error::ContentReadError => write!(f, "Could not read content from request")
         }
     }
 }
 
-impl std::error::Error for RequestError {}
+impl std::error::Error for Error {}
