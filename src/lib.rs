@@ -14,8 +14,19 @@ pub struct Request<'a> {
 }
 
 impl<'a> Request<'a> {
-    fn new(request: &'a str) -> Request<'a> {
-        return Request {
+    pub fn new() -> Request<'a> {
+        Request {
+            method: "",
+            uri: "",
+            protocol: "",
+            headers: HashMap::new(),
+            content: Vec::new(),
+            _request: String::new()
+        }
+    }
+
+    fn from(request: &'a str) -> Request<'a> {
+        Request {
             method: "",
             uri: "",
             protocol: "",
@@ -26,7 +37,7 @@ impl<'a> Request<'a> {
     }
 
     pub fn parse(request: &'a str) -> Result<Request<'a>, Error> {
-        let mut request_obj = Request::new(&request);
+        let mut request_obj = Request::from(&request);
         let mut lines = request.split("\n");
         let request_line = lines
             .next()
@@ -68,6 +79,15 @@ impl<'a> Request<'a> {
 
         Ok(request_obj)
     }
+}
+
+pub struct Response {
+    pub protocol: &'static str,
+    pub status_code: &'static str,
+    pub reason_phrase: &'static str,
+    pub headers: HashMap<&'static str, &'static str>,
+    pub content: Vec<u8>,
+    _response: String
 }
 
 #[derive(Debug)]
