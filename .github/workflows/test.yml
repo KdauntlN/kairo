@@ -1,0 +1,45 @@
+name: Test Library
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                toolchain: stable
+                override: true
+                components: clippy, rustfmt
+
+            - name: Cache Cargo dependancies
+              uses: actions/cache@v3
+              with:
+                path: |
+                    ~/.cargo/registry
+                    ~/.cargo/git
+                    target
+                key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                restore-keys: ${{ runner.os }}-cargo-
+
+            - name: Build
+              run: cargo build --verbose
+
+            - name: Test
+              run: cargo test --verbose
+
+            - name: Run Clippy
+              run: cargo clippy -- -D warnings
+
+            - name: Run rustfmt
+              run: cargo fmt --all -- --check
