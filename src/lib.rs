@@ -63,6 +63,7 @@ impl<'a> Request<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct Response {
     protocol: &'static str,
     status_code: i32,
@@ -80,6 +81,10 @@ impl Response {
             headers: HashMap::new(),
             content: vec![],
         }
+    }
+
+    pub fn protocol(&mut self, protocol: &'static str) {
+        self.protocol = protocol;
     }
 
     pub fn status(&mut self, status_code: i32) {
