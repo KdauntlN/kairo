@@ -64,12 +64,39 @@ impl<'a> Request<'a> {
 }
 
 pub struct Response {
-    pub protocol: &'static str,
-    pub status_code: &'static str,
-    pub reason_phrase: &'static str,
-    pub headers: HashMap<&'static str, &'static str>,
-    pub content: Vec<u8>,
-    _response: String
+    protocol: &'static str,
+    status_code: i32,
+    reason_phrase: &'static str,
+    headers: HashMap<&'static str, &'static str>,
+    content: Vec<u8>,
+}
+
+impl Response {
+    pub fn new() -> Response {
+        Response {
+            protocol: "HTTP/1.1",
+            status_code: 200,
+            reason_phrase: "OK",
+            headers: HashMap::new(),
+            content: vec![],
+        }
+    }
+
+    pub fn status(&mut self, status_code: i32) {
+        self.status_code = status_code;
+    }
+
+    pub fn reason_phrase(&mut self, reason_phrase: &'static str) {
+        self.reason_phrase = reason_phrase;
+    }
+
+    pub fn add_header(&mut self, header: &'static str, value: &'static str) {
+        self.headers.insert(header, value);
+    }
+
+    pub fn set_content(&mut self, content: &[u8]) {
+        self.content.extend_from_slice(content);
+    }
 }
 
 #[derive(Debug)]
