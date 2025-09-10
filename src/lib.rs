@@ -10,34 +10,10 @@ pub struct Request<'a> {
     pub protocol: &'a str,
     pub headers: HashMap<&'a str, &'a str>,
     pub content: Vec<u8>,
-    _request: String
 }
 
 impl<'a> Request<'a> {
-    pub fn new() -> Request<'a> {
-        Request {
-            method: "",
-            uri: "",
-            protocol: "",
-            headers: HashMap::new(),
-            content: Vec::new(),
-            _request: String::new()
-        }
-    }
-
-    fn from(request: &'a str) -> Request<'a> {
-        Request {
-            method: "",
-            uri: "",
-            protocol: "",
-            headers: HashMap::new(),
-            content: Vec::new(),
-            _request: request.to_string()
-        }
-    }
-
     pub fn parse(request: &'a str) -> Result<Request<'a>, Error> {
-        let mut request_obj = Request::from(&request);
         let mut lines = request.split("\n");
         let request_line = lines
             .next()
@@ -46,9 +22,11 @@ impl<'a> Request<'a> {
         let request_line = request_line.strip_suffix("\r").unwrap_or(request_line);
 
         let mut request_parts= request_line.split_whitespace();
-        request_obj.method = request_parts.next().ok_or(Error::InvalidStatusLine)?;
-        request_obj.uri = request_parts.next().ok_or(Error::InvalidStatusLine)?;
-        request_obj.protocol = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+        let method = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+        let uri = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+        let protocol = request_parts.next().ok_or(Error::InvalidStatusLine)?;
+
+        let mut headers = HashMap::new();
 
         for line in &mut lines {
             if line == "\r" || line.is_empty() {
@@ -58,11 +36,11 @@ impl<'a> Request<'a> {
             let line = line.strip_suffix("\r").unwrap_or(line);
 
             if let Some((k, v)) = line.split_once(": ") {
-                request_obj.headers.insert(k, v);
+                headers.insert(k, v);
             }
         }
 
-        let length = match request_obj.headers.get("Content-Length") {
+        let length = match headers.get("Content-Length") {
             Some(v) => v.parse::<usize>().map_err(|_| Error::InvalidHeader)?,
             None => 0,
         };
@@ -75,9 +53,13 @@ impl<'a> Request<'a> {
         let n = reader.read(&mut content).map_err(|_| Error::ContentReadError)?;
         content.truncate(n);
 
-        request_obj.content = content;
-
-        Ok(request_obj)
+        Ok(Request {
+            method,
+            uri,
+            protocol,
+            headers,
+            content
+        })
     }
 }
 
